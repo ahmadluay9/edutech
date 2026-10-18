@@ -1,0 +1,1620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Self-Study Lesson View | Interactive Video Roleplay</title>
+  <style>
+    :root {
+      --bg-dark: #222224;
+      --bg-header: #1d1d1f;
+      --accent-plum: #7d3254;
+      --accent-green: #16a34a;
+      --accent-amber: #d97706;
+      --accent-red: #dc2626;
+      --skeleton-bg: #f2f3f5;
+      --card-border: #eceef2;
+      --text-main: #1d1d1f;
+      --text-muted: #6e6e73;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #ffffff;
+      color: var(--text-main);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Top Bar (Matches EF English Live Header) */
+    .top-bar {
+      height: 60px;
+      background-color: var(--bg-header);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      flex-shrink: 0;
+      z-index: 20;
+    }
+
+    .top-left, .top-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 240px;
+    }
+
+    .top-right {
+      justify-content: flex-end;
+    }
+
+    .icon-btn {
+      background: transparent;
+      border: none;
+      color: #ffffff;
+      font-size: 20px;
+      cursor: pointer;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s ease;
+    }
+
+    .icon-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    /* Step Indicators in Center of Header */
+    .step-indicators {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .step-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid #555558;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      background: transparent;
+    }
+
+    .step-dot.active {
+      border-color: var(--accent-plum);
+    }
+
+    .step-dot.active::after {
+      content: "";
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background-color: var(--accent-plum);
+    }
+
+    .step-dot.completed {
+      border-color: #10b981;
+      background: rgba(16, 185, 129, 0.18);
+      color: #10b981;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .step-star {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #2f2f32;
+      color: #8e8e93;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .step-star.completed {
+      background: var(--accent-plum);
+      color: #ffffff;
+    }
+
+    .video-select {
+      background: #2c2c2e;
+      color: #e5e5ea;
+      border: 1px solid #3a3a3c;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .veo-btn {
+      background: #3a3a3c;
+      color: #ffffff;
+      border: 1px solid #525255;
+      border-radius: 6px;
+      padding: 6px 11px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .veo-btn:hover {
+      background: #48484a;
+    }
+
+    /* Main Workspace Split View */
+    .main-stage {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 48px;
+      overflow-y: auto;
+      background: #ffffff;
+    }
+
+    .lesson-grid {
+      width: 100%;
+      max-width: 1180px;
+      display: grid;
+      grid-template-columns: 1.05fr 1fr;
+      gap: 44px;
+      align-items: start;
+    }
+
+    /* Left Column: Video Container */
+    .video-card {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #111113;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+      user-select: none;
+    }
+
+    .video-card video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Center Replay / Play Overlay inside Video */
+    .video-center-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.15);
+      opacity: 1;
+      transition: opacity 0.2s ease;
+      pointer-events: auto;
+    }
+
+    .video-center-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .center-circle-btn {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      background: rgba(18, 18, 20, 0.78);
+      border: 2px solid rgba(255, 255, 255, 0.18);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.15s ease;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+    }
+
+    .center-circle-btn:hover {
+      transform: scale(1.06);
+      background: rgba(18, 18, 20, 0.92);
+    }
+
+    /* Custom Bottom Control Bar inside Video */
+    .video-controls-bar {
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
+      height: 42px;
+      background: rgba(20, 20, 22, 0.88);
+      backdrop-filter: blur(8px);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      gap: 12px;
+      color: #ffffff;
+      font-size: 13px;
+      z-index: 5;
+    }
+
+    .ctrl-btn {
+      background: transparent;
+      border: none;
+      color: #ffffff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 600;
+      opacity: 0.9;
+      padding: 4px;
+    }
+
+    .ctrl-btn:hover {
+      opacity: 1;
+    }
+
+    .time-label {
+      font-variant-numeric: tabular-nums;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #f2f2f7;
+      min-width: 32px;
+    }
+
+    /* Custom Timeline with Checkpoint Dots */
+    .timeline-wrapper {
+      flex: 1;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .timeline-track {
+      width: 100%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.26);
+      border-radius: 2px;
+      position: relative;
+    }
+
+    .timeline-fill {
+      height: 100%;
+      background: #ffffff;
+      border-radius: 2px;
+      width: 0%;
+      position: relative;
+    }
+
+    .timeline-thumb {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ffffff;
+      position: absolute;
+      right: -6px;
+      top: 50%;
+      transform: translateY(-50%);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+    }
+
+    .checkpoint-marker {
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 1.5px solid #1c1c1e;
+      z-index: 3;
+      transition: transform 0.15s ease, background 0.15s ease;
+    }
+
+    .checkpoint-marker.passed {
+      background: #10b981;
+    }
+
+    .checkpoint-marker.active-cp {
+      transform: translate(-50%, -50%) scale(1.35);
+      background: #fbbf24;
+    }
+
+    /* Right Column: Options & Speaking Panel */
+    .right-panel {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      min-height: 360px;
+    }
+
+    /* Skeleton Placeholders (Shown while video plays before checkpoint) */
+    .skeleton-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      width: 100%;
+    }
+
+    .skeleton-bar {
+      height: 62px;
+      border-radius: 8px;
+      background: linear-gradient(90deg, #f1f2f4 25%, #e8eaed 50%, #f1f2f4 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.8s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* Active Options List */
+    .options-container {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      width: 100%;
+      animation: fadeIn 0.22s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .option-card {
+      background: #ffffff;
+      border: 1.5px solid var(--card-border);
+      border-radius: 8px;
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+      transition: all 0.18s ease;
+      cursor: pointer;
+    }
+
+    .option-card:hover {
+      border-color: #cfd4dc;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    }
+
+    .option-card.selected-correct {
+      border-color: var(--accent-green);
+      background: #f0fdf4;
+    }
+
+    .option-card.selected-wrong {
+      border-color: var(--accent-red);
+      background: #fef2f2;
+    }
+
+    .option-card.selected-retry {
+      border-color: var(--accent-amber);
+      background: #fffbeb;
+    }
+
+    .option-left {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      font-size: 16px;
+      line-height: 1.45;
+      color: #1d1d1f;
+    }
+
+    .option-letter {
+      font-weight: 800;
+      font-size: 18px;
+      color: #111113;
+      min-width: 24px;
+    }
+
+    .option-text {
+      font-weight: 400;
+    }
+
+    /* Word-level pronunciation highlighting */
+    .word-token {
+      display: inline-block;
+      margin-right: 4px;
+      padding: 1px 4px;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+
+    .word-token.correct {
+      color: #15803d;
+      background: rgba(22, 163, 74, 0.12);
+      font-weight: 600;
+    }
+
+    .word-token.partial {
+      color: #b45309;
+      background: rgba(217, 119, 6, 0.15);
+      text-decoration: underline wavy #d97706;
+    }
+
+    .word-token.missing {
+      color: #b91c1c;
+      background: rgba(220, 38, 38, 0.12);
+      text-decoration: line-through;
+    }
+
+    .tts-btn {
+      background: #f4f5f7;
+      border: none;
+      color: #4b5563;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      font-size: 14px;
+      transition: background 0.15s;
+    }
+
+    .tts-btn:hover {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    /* Microphone Action Section */
+    .mic-section {
+      margin-top: 28px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .mic-btn {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      background: #1b1b1d;
+      color: #ffffff;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+      transition: transform 0.15s ease, background 0.15s ease;
+      position: relative;
+    }
+
+    .mic-btn:hover {
+      transform: scale(1.05);
+      background: #2c2c2f;
+    }
+
+    .mic-btn.recording {
+      background: #dc2626;
+      animation: pulseRing 1.3s infinite;
+    }
+
+    @keyframes pulseRing {
+      0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.55); }
+      70% { box-shadow: 0 0 0 18px rgba(220, 38, 38, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+    }
+
+    .mic-status-text {
+      font-size: 13px;
+      color: var(--text-muted);
+      text-align: center;
+      min-height: 18px;
+    }
+
+    .skip-btn {
+      background: transparent;
+      border: none;
+      color: #1d1d1f;
+      font-size: 12.5px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-decoration: underline;
+      text-underline-offset: 4px;
+      cursor: pointer;
+      padding: 4px 10px;
+      opacity: 0.85;
+    }
+
+    .skip-btn:hover {
+      opacity: 1;
+    }
+
+    /* Evaluation Feedback Box */
+    .feedback-box {
+      margin-top: 14px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      line-height: 1.45;
+      width: 100%;
+      display: none;
+    }
+
+    .feedback-box.show {
+      display: block;
+    }
+
+    .feedback-box.success {
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      color: #065f46;
+    }
+
+    .feedback-box.warning {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      color: #92400e;
+    }
+
+    .feedback-box.error {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+    }
+
+    /* Quick Voice Simulator Drawer for Testing Without Physical Mic */
+    .simulator-bar {
+      margin-top: 14px;
+      width: 100%;
+      border-top: 1px dashed #e5e7eb;
+      padding-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .simulator-title {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sim-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .sim-chip {
+      background: #f3f4f6;
+      border: 1px solid #d1d5db;
+      border-radius: 999px;
+      padding: 5px 11px;
+      font-size: 12px;
+      color: #374151;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .sim-chip:hover {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    /* Bottom Footer Bar (Matches EF English Live Footer) */
+    .bottom-bar {
+      height: 88px;
+      background-color: var(--bg-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-shrink: 0;
+      z-index: 20;
+    }
+
+    .next-btn {
+      width: 280px;
+      height: 48px;
+      border-radius: 999px;
+      border: none;
+      background: #8e8e93;
+      color: #ffffff;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: not-allowed;
+      opacity: 0.65;
+      transition: all 0.2s ease;
+    }
+
+    .next-btn.enabled {
+      background: #ffffff;
+      color: #1d1d1f;
+      cursor: pointer;
+      opacity: 1;
+      box-shadow: 0 4px 14px rgba(255, 255, 255, 0.2);
+    }
+
+    .next-btn.enabled:hover {
+      transform: translateY(-1px);
+      background: #f2f2f7;
+    }
+
+    .progress-ring-wrap {
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .progress-ring-circle {
+      transition: stroke-dashoffset 0.35s ease;
+      transform: rotate(-90deg);
+      transform-origin: 50% 50%;
+    }
+
+    /* Modal for Veo 3.1 Video Generator & Architecture Info */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 20px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-card {
+      background: #ffffff;
+      border-radius: 12px;
+      max-width: 620px;
+      width: 100%;
+      padding: 24px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .modal-header h3 {
+      font-size: 18px;
+      color: #111827;
+    }
+
+    .modal-textarea {
+      width: 100%;
+      min-height: 95px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13.5px;
+      font-family: inherit;
+      margin-top: 6px;
+      margin-bottom: 14px;
+    }
+
+    .primary-action-btn {
+      background: #1d1d1f;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .primary-action-btn:disabled {
+      opacity: 0.5;
+      cursor: wait;
+    }
+
+    @media (max-width: 900px) {
+      .lesson-grid {
+        grid-template-columns: 1fr;
+        gap: 24px;
+      }
+      .main-stage {
+        padding: 16px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <header class="top-bar">
+    <div class="top-left">
+      <button class="icon-btn" id="resetLessonBtn" title="Restart Lesson">✕</button>
+      <span id="checkpointBadge" style="font-size: 12.5px; color: #a1a1aa; font-weight: 500;">
+        Checkpoint 1 / 2
+      </span>
+    </div>
+
+    <div class="step-indicators">
+      <div class="step-dot active" id="stepDot1" title="Checkpoint 1: Greeting & Reading"></div>
+      <div class="step-dot" id="stepDot2" title="Checkpoint 2: Stock Market"></div>
+      <div class="step-star" id="stepStar" title="Lesson Complete">☆</div>
+    </div>
+
+    <div class="top-right">
+      <select class="video-select" id="videoSelector" title="Switch Generated Veo 3.1 Lite Video"></select>
+      <button class="veo-btn" id="openVeoModalBtn">+ Veo 3.1 Video</button>
+      <button class="icon-btn" id="helpBtn" title="How it works">?</button>
+    </div>
+  </header>
+
+  <!-- Main Split-Screen Lesson Stage -->
+  <main class="main-stage">
+    <div class="lesson-grid">
+
+      <!-- Left Column: Interactive Video Player with Checkpoint Markers -->
+      <div class="video-card" id="videoCard">
+        <video id="lessonVideo" preload="auto" playsinline></video>
+
+        <!-- Center Overlay Button (Play at start, or Replay ↺ when paused at checkpoint) -->
+        <div class="video-center-overlay" id="videoCenterOverlay">
+          <button class="center-circle-btn" id="centerOverlayBtn" title="Play / Replay Segment">
+            <!-- Icon dynamically switches between Play and Replay -->
+            <svg id="centerIconPlay" width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+            <svg id="centerIconReplay" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+              <path d="M3 12a9 9 0 1 0 3-6.7L3 8"/>
+              <path d="M3 3v5h5"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Custom Bottom Control Bar -->
+        <div class="video-controls-bar">
+          <button class="ctrl-btn" id="playPauseBtn" title="Play / Pause">
+            <span id="playPauseIcon">▶</span>
+          </button>
+
+          <span class="time-label" id="currentTimeLabel">0:00</span>
+
+          <div class="timeline-wrapper" id="timelineWrapper">
+            <div class="timeline-track" id="timelineTrack">
+              <div class="timeline-fill" id="timelineFill">
+                <div class="timeline-thumb"></div>
+              </div>
+              <!-- Checkpoint dots injected dynamically -->
+              <div id="checkpointMarkersContainer"></div>
+            </div>
+          </div>
+
+          <span class="time-label" id="durationLabel">0:08</span>
+
+          <button class="ctrl-btn" id="speedBtn" title="Playback Speed">1x</button>
+          <button class="ctrl-btn" id="muteBtn" title="Mute / Unmute">🔊</button>
+        </div>
+      </div>
+
+      <!-- Right Column: Skeleton Bars -> Multiple Choice Options + Microphone -->
+      <div class="right-panel">
+
+        <!-- State 1: Skeleton Placeholder Bars (Shown while video is playing before checkpoint) -->
+        <div class="skeleton-list" id="skeletonContainer">
+          <div class="skeleton-bar"></div>
+          <div class="skeleton-bar"></div>
+          <div class="skeleton-bar"></div>
+        </div>
+
+        <!-- State 2: Active Checkpoint Options + Mic (Shown as soon as video auto-pauses at checkpoint) -->
+        <div id="interactiveQuestionPanel" style="display: none;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 10px;">
+            <span id="speakerPromptLabel" style="font-size: 13px; color: #6e6e73; font-style: italic;">
+              Colleague: "Hi, and what are you reading?"
+            </span>
+            <button id="replaySegmentSmallBtn" style="background:none; border:none; color:#7d3254; font-size:12.5px; font-weight:600; cursor:pointer;">
+              ↺ Replay Question
+            </button>
+          </div>
+
+          <div class="options-container" id="optionsList"></div>
+
+          <!-- Evaluation Feedback Message -->
+          <div class="feedback-box" id="feedbackBox"></div>
+
+          <!-- Microphone & SKIP Controls -->
+          <div class="mic-section">
+            <button class="mic-btn" id="micBtn" title="Click to Speak Your Chosen Response">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" x2="12" y1="19" y2="22"/>
+                <line x1="8" x2="16" y1="22" y2="22"/>
+              </svg>
+            </button>
+            <div class="mic-status-text" id="micStatusText">
+              Klik mikrofon lalu ucapkan jawaban yang benar (A, B, atau C)
+            </div>
+            <button class="skip-btn" id="skipBtn">SKIP</button>
+          </div>
+
+          <!-- Quick Simulator Bar (Helpful when testing without a physical microphone) -->
+          <div class="simulator-bar">
+            <div class="simulator-title">
+              <span>🎧 Uji Coba Cepat (Simulasi Ucapan / Tanpa Mikrofon Fisik)</span>
+            </div>
+            <div class="sim-buttons" id="simButtonsContainer"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Bottom Bar -->
+  <footer class="bottom-bar">
+    <button class="next-btn" id="nextBtn" disabled>Next</button>
+    <div class="progress-ring-wrap" title="Lesson Completion Progress">
+      <svg width="42" height="42">
+        <circle stroke="#48484a" stroke-width="2.5" fill="transparent" r="18" cx="21" cy="21"/>
+        <circle class="progress-ring-circle" id="progressRingCircle" stroke="#ffffff" stroke-width="2.5" stroke-dasharray="113.1" stroke-dashoffset="113.1" stroke-linecap="round" fill="transparent" r="18" cx="21" cy="21"/>
+      </svg>
+    </div>
+  </footer>
+
+  <!-- Veo 3.1 Lite Video Generator Modal -->
+  <div class="modal-backdrop" id="veoModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Generate New Lesson Video (Veo 3.1 Lite)</h3>
+        <button class="icon-btn" id="closeVeoModalBtn" style="color:#111827;">✕</button>
+      </div>
+      <p style="font-size: 13.5px; color: #4b5563; line-height: 1.5; margin-bottom: 10px;">
+        Menggunakan <code>veo-3.1-lite-generate-001</code> pada project <code>eikon-dev-ai-team</code> dengan <code>location="global"</code>.
+      </p>
+      <label style="font-size: 13px; font-weight: 600; color: #111827;">Prompt Video:</label>
+      <textarea class="modal-textarea" id="veoPromptInput">Medium close-up shot of a friendly professional businesswoman in a modern softly blurred office, looking directly at the camera. At the beginning she smiles warmly and asks clearly in English: "Hi, and what are you reading?" She then pauses and nods attentively for two seconds, and then smiles and asks: "Oh interesting, how is the stock market doing today?"</textarea>
+      <div style="display:flex; align-items:center; justify-content:space-between; gap: 12px;">
+        <span id="veoStatusMsg" style="font-size: 13px; color: #4b5563;"></span>
+        <button class="primary-action-btn" id="runVeoGenerateBtn">Generate with Veo 3.1 Lite</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Help / Architecture Modal -->
+  <div class="modal-backdrop" id="helpModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Arsitektur Prototype Interactive Video Roleplay</h3>
+        <button class="icon-btn" id="closeHelpModalBtn" style="color:#111827;">✕</button>
+      </div>
+      <div style="font-size: 13.5px; color: #374151; line-height: 1.6; display:flex; flex-direction:column; gap:10px;">
+        <p><strong>1. Video Generation (Veo 3.1 Lite):</strong> Video karakter dibuat menggunakan <code>veo-3.1-lite-generate-001</code> (Vertex AI <code>location="global"</code>) dengan 2 segmen pertanyaan dalam satu timeline.</p>
+        <p><strong>2. Interactive Checkpoint Timeline:</strong> Player memantau waktu pemutaran secara presisi. Saat mencapai titik checkpoint (detik <code>2.25s</code> dan <code>7.75s</code>), video otomatis <em>pause</em>, menampilkan tombol <em>Replay</em> di tengah video, dan membuka opsi A/B/C serta mikrofon di panel kanan.</p>
+        <p><strong>3. Open-Source Speech & Pronunciation Scoring:</strong> Menggunakan <em>Web Speech API</em> + <code>MediaRecorder</code> fallback dan dievaluasi di backend menggunakan algoritma Levenshtein & token alignment (<code>rapidfuzz</code>) untuk mendeteksi opsi mana yang diucapkan sekaligus menilai akurasi pelafalan per kata.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const state = {
+      lesson: null,
+      currentCheckpointIndex: 0,
+      checkpointPaused: false,
+      checkpointCompleted: {},
+      lastWordFeedbackByOption: {},
+      selectedOptionStatus: {},
+      isRecording: false,
+      recognition: null,
+      mediaRecorder: null,
+      recordedChunks: [],
+      liveTranscript: "",
+      playbackRates: [1, 0.75, 1.25],
+      rateIndex: 0,
+    };
+
+    const videoEl = document.getElementById("lessonVideo");
+    const videoCenterOverlay = document.getElementById("videoCenterOverlay");
+    const centerOverlayBtn = document.getElementById("centerOverlayBtn");
+    const centerIconPlay = document.getElementById("centerIconPlay");
+    const centerIconReplay = document.getElementById("centerIconReplay");
+    const playPauseBtn = document.getElementById("playPauseBtn");
+    const playPauseIcon = document.getElementById("playPauseIcon");
+    const currentTimeLabel = document.getElementById("currentTimeLabel");
+    const durationLabel = document.getElementById("durationLabel");
+    const timelineWrapper = document.getElementById("timelineWrapper");
+    const timelineFill = document.getElementById("timelineFill");
+    const checkpointMarkersContainer = document.getElementById("checkpointMarkersContainer");
+    const speedBtn = document.getElementById("speedBtn");
+    const muteBtn = document.getElementById("muteBtn");
+
+    const skeletonContainer = document.getElementById("skeletonContainer");
+    const interactiveQuestionPanel = document.getElementById("interactiveQuestionPanel");
+    const speakerPromptLabel = document.getElementById("speakerPromptLabel");
+    const optionsList = document.getElementById("optionsList");
+    const feedbackBox = document.getElementById("feedbackBox");
+    const micBtn = document.getElementById("micBtn");
+    const micStatusText = document.getElementById("micStatusText");
+    const skipBtn = document.getElementById("skipBtn");
+    const simButtonsContainer = document.getElementById("simButtonsContainer");
+    const nextBtn = document.getElementById("nextBtn");
+    const progressRingCircle = document.getElementById("progressRingCircle");
+    const checkpointBadge = document.getElementById("checkpointBadge");
+    const videoSelector = document.getElementById("videoSelector");
+
+    function formatTime(sec) {
+      if (!isFinite(sec) || sec < 0) return "0:00";
+      const s = Math.floor(sec);
+      const mins = Math.floor(s / 60);
+      const rem = s % 60;
+      return `${mins}:${rem < 10 ? "0" + rem : rem}`;
+    }
+
+    function getCurrentCheckpoint() {
+      if (!state.lesson || !state.lesson.checkpoints.length) return null;
+      return state.lesson.checkpoints[state.currentCheckpointIndex] || null;
+    }
+
+    async function loadLesson() {
+      const res = await fetch("/api/lesson");
+      state.lesson = await res.json();
+
+      // Populate video dropdown
+      videoSelector.innerHTML = "";
+      state.lesson.available_videos.forEach((v) => {
+        const opt = document.createElement("option");
+        opt.value = v.url;
+        opt.textContent = v.label;
+        videoSelector.appendChild(opt);
+      });
+
+      videoEl.src = state.lesson.default_video_url;
+      videoEl.load();
+      resetToCheckpoint(0, false);
+    }
+
+    function renderCheckpointMarkers() {
+      checkpointMarkersContainer.innerHTML = "";
+      const dur = videoEl.duration || 8.0;
+      if (!state.lesson) return;
+
+      state.lesson.checkpoints.forEach((cp, idx) => {
+        const dot = document.createElement("div");
+        dot.className = "checkpoint-marker";
+        if (state.checkpointCompleted[cp.id]) {
+          dot.classList.add("passed");
+        } else if (idx === state.currentCheckpointIndex) {
+          dot.classList.add("active-cp");
+        }
+        const pct = Math.min(Math.max((cp.pause_at_sec / dur) * 100, 2), 98);
+        dot.style.left = `${pct}%`;
+        dot.title = `${cp.title} (${cp.pause_at_sec.toFixed(1)}s)`;
+        dot.addEventListener("click", (e) => {
+          e.stopPropagation();
+          jumpToCheckpoint(idx);
+        });
+        checkpointMarkersContainer.appendChild(dot);
+      });
+    }
+
+    function updateHeaderAndProgress() {
+      if (!state.lesson) return;
+      const total = state.lesson.checkpoints.length;
+      const completedCount = Object.keys(state.checkpointCompleted).length;
+
+      checkpointBadge.textContent = `Checkpoint ${state.currentCheckpointIndex + 1} / ${total}`;
+
+      const dot1 = document.getElementById("stepDot1");
+      const dot2 = document.getElementById("stepDot2");
+      const star = document.getElementById("stepStar");
+
+      dot1.className = "step-dot";
+      dot2.className = "step-dot";
+      star.className = "step-star";
+
+      if (state.checkpointCompleted[1]) {
+        dot1.classList.add("completed");
+        dot1.textContent = "✓";
+      } else if (state.currentCheckpointIndex === 0) {
+        dot1.classList.add("active");
+        dot1.textContent = "";
+      } else {
+        dot1.textContent = "";
+      }
+
+      if (state.checkpointCompleted[2]) {
+        dot2.classList.add("completed");
+        dot2.textContent = "✓";
+      } else if (state.currentCheckpointIndex === 1) {
+        dot2.classList.add("active");
+        dot2.textContent = "";
+      } else {
+        dot2.textContent = "";
+      }
+
+      if (completedCount >= total) {
+        star.classList.add("completed");
+        star.textContent = "★";
+      } else {
+        star.textContent = "☆";
+      }
+
+      const circumference = 113.1;
+      const ratio = total > 0 ? completedCount / total : 0;
+      progressRingCircle.style.strokeDashoffset = String(circumference - ratio * circumference);
+    }
+
+    function showSkeletonPanel() {
+      skeletonContainer.style.display = "flex";
+      interactiveQuestionPanel.style.display = "none";
+    }
+
+    function showCheckpointOptionsPanel() {
+      const cp = getCurrentCheckpoint();
+      if (!cp) return;
+
+      skeletonContainer.style.display = "none";
+      interactiveQuestionPanel.style.display = "block";
+      speakerPromptLabel.textContent = `Colleague: "${cp.speaker_prompt}"`;
+
+      renderOptionsList(cp);
+      renderSimulatorButtons(cp);
+    }
+
+    function renderOptionsList(cp) {
+      optionsList.innerHTML = "";
+      cp.options.forEach((opt) => {
+        const card = document.createElement("div");
+        card.className = "option-card";
+        const status = state.selectedOptionStatus[opt.id];
+        if (status === "correct") card.classList.add("selected-correct");
+        if (status === "wrong") card.classList.add("selected-wrong");
+        if (status === "retry") card.classList.add("selected-retry");
+
+        const left = document.createElement("div");
+        left.className = "option-left";
+
+        const letter = document.createElement("span");
+        letter.className = "option-letter";
+        letter.textContent = `${opt.id}.`;
+
+        const textSpan = document.createElement("span");
+        textSpan.className = "option-text";
+
+        const wordFb = state.lastWordFeedbackByOption[opt.id];
+        if (wordFb && wordFb.length > 0) {
+          wordFb.forEach((w) => {
+            const tokenEl = document.createElement("span");
+            tokenEl.className = `word-token ${w.status}`;
+            tokenEl.textContent = w.word;
+            tokenEl.title = `Pronunciation score: ${w.score}%`;
+            textSpan.appendChild(tokenEl);
+          });
+        } else {
+          textSpan.textContent = opt.text;
+        }
+
+        left.appendChild(letter);
+        left.appendChild(textSpan);
+
+        const ttsBtn = document.createElement("button");
+        ttsBtn.className = "tts-btn";
+        ttsBtn.title = "Listen to pronunciation sample";
+        ttsBtn.textContent = "🔊";
+        ttsBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          speakSampleText(opt.text);
+        });
+
+        card.addEventListener("click", () => {
+          // Clicking an option card evaluates it directly so user can also click-to-answer
+          evaluateTranscript(opt.text);
+        });
+
+        card.appendChild(left);
+        card.appendChild(ttsBtn);
+        optionsList.appendChild(card);
+      });
+    }
+
+    function renderSimulatorButtons(cp) {
+      simButtonsContainer.innerHTML = "";
+      const correctOpt = cp.options.find((o) => o.is_correct) || cp.options[0];
+      const wrongOpt = cp.options.find((o) => !o.is_correct) || cp.options[1];
+
+      const presets = [
+        {
+          label: `✅ Ucapkan Opsi ${correctOpt.id} (Fasih 100%)`,
+          text: correctOpt.text,
+        },
+        {
+          label: `⚠️ Ucapkan Opsi ${correctOpt.id} (Kurang Jelas)`,
+          text: correctOpt.text.split(" ").slice(0, 3).join(" "),
+        },
+        {
+          label: `❌ Ucapkan Opsi ${wrongOpt.id} (Salah Konteks)`,
+          text: wrongOpt.text,
+        },
+      ];
+
+      presets.forEach((p) => {
+        const btn = document.createElement("button");
+        btn.className = "sim-chip";
+        btn.textContent = p.label;
+        btn.addEventListener("click", () => {
+          evaluateTranscript(p.text);
+        });
+        simButtonsContainer.appendChild(btn);
+      });
+    }
+
+    function speakSampleText(text) {
+      if (!("speechSynthesis" in window)) return;
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = "en-US";
+      utter.rate = 0.95;
+      window.speechSynthesis.speak(utter);
+    }
+
+    function setCenterOverlay(mode) {
+      if (mode === "hidden") {
+        videoCenterOverlay.classList.add("hidden");
+      } else if (mode === "play") {
+        videoCenterOverlay.classList.remove("hidden");
+        centerIconPlay.style.display = "block";
+        centerIconReplay.style.display = "none";
+      } else if (mode === "replay") {
+        videoCenterOverlay.classList.remove("hidden");
+        centerIconPlay.style.display = "none";
+        centerIconReplay.style.display = "block";
+      }
+    }
+
+    function pauseAtCurrentCheckpoint() {
+      const cp = getCurrentCheckpoint();
+      if (!cp) return;
+      videoEl.pause();
+      state.checkpointPaused = true;
+      setCenterOverlay("replay");
+      showCheckpointOptionsPanel();
+      renderCheckpointMarkers();
+    }
+
+    function replayCurrentSegment() {
+      const cp = getCurrentCheckpoint();
+      if (!cp) return;
+      state.checkpointPaused = false;
+      feedbackBox.className = "feedback-box";
+      showSkeletonPanel();
+      setCenterOverlay("hidden");
+      videoEl.currentTime = cp.replay_start_sec;
+      videoEl.play().catch(() => {});
+    }
+
+    function resetToCheckpoint(idx, autoPlay = true) {
+      if (!state.lesson) return;
+      state.currentCheckpointIndex = idx;
+      state.checkpointPaused = false;
+      state.lastWordFeedbackByOption = {};
+      state.selectedOptionStatus = {};
+      feedbackBox.className = "feedback-box";
+
+      const cp = getCurrentCheckpoint();
+      nextBtn.disabled = !state.checkpointCompleted[cp.id];
+      nextBtn.classList.toggle("enabled", Boolean(state.checkpointCompleted[cp.id]));
+      nextBtn.textContent = idx + 1 < state.lesson.checkpoints.length ? "Next" : "Finish Lesson";
+
+      showSkeletonPanel();
+      updateHeaderAndProgress();
+      renderCheckpointMarkers();
+
+      videoEl.currentTime = cp ? cp.replay_start_sec : 0;
+      if (autoPlay) {
+        setCenterOverlay("hidden");
+        videoEl.play().catch(() => {
+          setCenterOverlay("play");
+        });
+      } else {
+        setCenterOverlay("play");
+      }
+    }
+
+    function jumpToCheckpoint(idx) {
+      resetToCheckpoint(idx, true);
+    }
+
+    async function evaluateTranscript(transcriptText) {
+      const cp = getCurrentCheckpoint();
+      if (!cp) return;
+
+      micStatusText.textContent = `Mengevaluasi ucapan: "${transcriptText}"...`;
+
+      const res = await fetch("/api/evaluate-speech", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          transcript: transcriptText,
+          checkpoint_id: cp.id,
+          pass_threshold: 65.0,
+        }),
+      });
+      const result = await res.json();
+      applyEvaluationResult(result);
+    }
+
+    function applyEvaluationResult(result) {
+      const cp = getCurrentCheckpoint();
+      if (!cp) return;
+
+      state.lastWordFeedbackByOption = {};
+      state.selectedOptionStatus = {};
+
+      if (result.matched_option_id) {
+        state.lastWordFeedbackByOption[result.matched_option_id] = result.word_feedback || [];
+        if (result.passed) {
+          state.selectedOptionStatus[result.matched_option_id] = "correct";
+        } else if (result.is_correct_option) {
+          state.selectedOptionStatus[result.matched_option_id] = "retry";
+        } else {
+          state.selectedOptionStatus[result.matched_option_id] = "wrong";
+        }
+      }
+
+      renderOptionsList(cp);
+
+      feedbackBox.textContent = result.feedback_message;
+      if (result.passed) {
+        feedbackBox.className = "feedback-box show success";
+        micStatusText.textContent = `Terdeteksi: "${result.transcript}" (Skor Pelafalan: ${result.pronunciation_score}%)`;
+        markCheckpointCompleted(cp.id);
+      } else if (result.is_correct_option) {
+        feedbackBox.className = "feedback-box show warning";
+        micStatusText.textContent = `Terdeteksi: "${result.transcript}" (${result.pronunciation_score}%) — Coba ucapkan sekali lagi`;
+      } else {
+        feedbackBox.className = "feedback-box show error";
+        micStatusText.textContent = `Terdeteksi: "${result.transcript}" — Pilih opsi jawaban yang sesuai konteks`;
+      }
+    }
+
+    function markCheckpointCompleted(cpId) {
+      state.checkpointCompleted[cpId] = true;
+      nextBtn.disabled = false;
+      nextBtn.classList.add("enabled");
+      updateHeaderAndProgress();
+      renderCheckpointMarkers();
+    }
+
+    /* Microphone Recording (Web Speech API + MediaRecorder Dual Pipeline) */
+    async function toggleMicrophone() {
+      if (state.isRecording) {
+        stopRecording();
+        return;
+      }
+      await startRecording();
+    }
+
+    async function startRecording() {
+      state.isRecording = true;
+      state.liveTranscript = "";
+      micBtn.classList.add("recording");
+      micStatusText.textContent = "🎙️ Mendengarkan... Ucapkan opsi A, B, atau C (klik lagi untuk berhenti)";
+
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        try {
+          const recognition = new SpeechRecognition();
+          recognition.lang = "en-US";
+          recognition.interimResults = true;
+          recognition.maxAlternatives = 1;
+
+          recognition.onresult = (event) => {
+            let interim = "";
+            let finalStr = "";
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+              const t = event.results[i][0].transcript;
+              if (event.results[i].isFinal) {
+                finalStr += t;
+              } else {
+                interim += t;
+              }
+            }
+            state.liveTranscript = (finalStr || interim).trim();
+            if (state.liveTranscript) {
+              micStatusText.textContent = `🎙️ "${state.liveTranscript}"`;
+            }
+          };
+
+          recognition.onend = () => {
+            if (state.isRecording && state.liveTranscript) {
+              stopRecording();
+            }
+          };
+
+          state.recognition = recognition;
+          recognition.start();
+        } catch (e) {
+          console.warn("Web Speech API start error:", e);
+        }
+      }
+
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          state.recordedChunks = [];
+          const recorder = new MediaRecorder(stream);
+          recorder.ondataavailable = (e) => {
+            if (e.data && e.data.size > 0) state.recordedChunks.push(e.data);
+          };
+          recorder.onstop = async () => {
+            stream.getTracks().forEach((t) => t.stop());
+            const cp = getCurrentCheckpoint();
+            if (!cp) return;
+
+            if (state.liveTranscript) {
+              await evaluateTranscript(state.liveTranscript);
+            } else if (state.recordedChunks.length > 0) {
+              micStatusText.textContent = "Memproses rekaman suara di server...";
+              const blob = new Blob(state.recordedChunks, { type: recorder.mimeType || "audio/webm" });
+              const formData = new FormData();
+              formData.append("audio", blob, "speech.webm");
+              formData.append("checkpoint_id", String(cp.id));
+              formData.append("client_transcript", state.liveTranscript);
+
+              const res = await fetch("/api/transcribe-audio", {
+                method: "POST",
+                body: formData,
+              });
+              const result = await res.json();
+              applyEvaluationResult(result);
+            }
+          };
+          state.mediaRecorder = recorder;
+          recorder.start();
+        } catch (err) {
+          console.warn("Microphone access unavailable:", err);
+          if (!state.recognition) {
+            state.isRecording = false;
+            micBtn.classList.remove("recording");
+            micStatusText.textContent = "Mikrofon tidak terdeteksi di perangkat ini. Gunakan tombol Simulasi Ucapan di bawah.";
+          }
+        }
+      }
+    }
+
+    function stopRecording() {
+      state.isRecording = false;
+      micBtn.classList.remove("recording");
+      if (state.recognition) {
+        try {
+          state.recognition.stop();
+        } catch (e) {}
+        state.recognition = null;
+      }
+      if (state.mediaRecorder && state.mediaRecorder.state !== "inactive") {
+        state.mediaRecorder.stop();
+      } else if (state.liveTranscript) {
+        evaluateTranscript(state.liveTranscript);
+      } else {
+        micStatusText.textContent = "Klik mikrofon lalu ucapkan salah satu pilihan (A, B, atau C)";
+      }
+    }
+
+    /* Video Events & High-Precision Checkpoint Monitor */
+    videoEl.addEventListener("loadedmetadata", () => {
+      durationLabel.textContent = formatTime(videoEl.duration);
+      renderCheckpointMarkers();
+    });
+
+    videoEl.addEventListener("play", () => {
+      playPauseIcon.textContent = "❚❚";
+      setCenterOverlay("hidden");
+    });
+
+    videoEl.addEventListener("pause", () => {
+      playPauseIcon.textContent = "▶";
+      if (!state.checkpointPaused) {
+        setCenterOverlay("play");
+      }
+    });
+
+    function monitorVideoProgress() {
+      if (videoEl.duration) {
+        const cur = videoEl.currentTime;
+        const dur = videoEl.duration;
+        currentTimeLabel.textContent = formatTime(cur);
+        const pct = Math.min(Math.max((cur / dur) * 100, 0), 100);
+        timelineFill.style.width = `${pct}%`;
+
+        const cp = getCurrentCheckpoint();
+        if (cp && !state.checkpointPaused && !videoEl.paused) {
+          if (cur >= cp.pause_at_sec) {
+            pauseAtCurrentCheckpoint();
+          }
+        }
+      }
+      requestAnimationFrame(monitorVideoProgress);
+    }
+    requestAnimationFrame(monitorVideoProgress);
+
+    /* Controls Event Listeners */
+    centerOverlayBtn.addEventListener("click", () => {
+      if (state.checkpointPaused) {
+        replayCurrentSegment();
+      } else {
+        videoEl.play().catch(() => {});
+      }
+    });
+
+    document.getElementById("replaySegmentSmallBtn").addEventListener("click", () => {
+      replayCurrentSegment();
+    });
+
+    playPauseBtn.addEventListener("click", () => {
+      if (state.checkpointPaused) {
+        replayCurrentSegment();
+        return;
+      }
+      if (videoEl.paused) {
+        videoEl.play();
+      } else {
+        videoEl.pause();
+      }
+    });
+
+    timelineWrapper.addEventListener("click", (e) => {
+      if (!videoEl.duration) return;
+      const rect = timelineWrapper.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const ratio = Math.min(Math.max(clickX / rect.width, 0), 1);
+      const targetTime = ratio * videoEl.duration;
+
+      // Determine which checkpoint corresponds to targetTime
+      if (state.lesson && state.lesson.checkpoints.length > 1) {
+        if (targetTime < state.lesson.checkpoints[0].resume_from_sec - 0.2) {
+          state.currentCheckpointIndex = 0;
+        } else {
+          state.currentCheckpointIndex = 1;
+        }
+        updateHeaderAndProgress();
+      }
+      state.checkpointPaused = false;
+      showSkeletonPanel();
+      videoEl.currentTime = targetTime;
+      videoEl.play().catch(() => {});
+    });
+
+    speedBtn.addEventListener("click", () => {
+      state.rateIndex = (state.rateIndex + 1) % state.playbackRates.length;
+      const rate = state.playbackRates[state.rateIndex];
+      videoEl.playbackRate = rate;
+      speedBtn.textContent = `${rate}x`;
+    });
+
+    muteBtn.addEventListener("click", () => {
+      videoEl.muted = !videoEl.muted;
+      muteBtn.textContent = videoEl.muted ? "🔇" : "🔊";
+    });
+
+    micBtn.addEventListener("click", toggleMicrophone);
+
+    skipBtn.addEventListener("click", () => {
+      const cp = getCurrentCheckpoint();
+      if (!cp) return;
+      const correctOpt = cp.options.find((o) => o.is_correct);
+      if (correctOpt) {
+        state.selectedOptionStatus[correctOpt.id] = "correct";
+        renderOptionsList(cp);
+      }
+      feedbackBox.textContent = `Checkpoint dilewati (SKIP). Jawaban yang benar adalah ${correctOpt ? correctOpt.id : "A"}: "${correctOpt ? correctOpt.text : ""}"`;
+      feedbackBox.className = "feedback-box show warning";
+      markCheckpointCompleted(cp.id);
+    });
+
+    nextBtn.addEventListener("click", () => {
+      if (!state.lesson) return;
+      if (state.currentCheckpointIndex + 1 < state.lesson.checkpoints.length) {
+        resetToCheckpoint(state.currentCheckpointIndex + 1, true);
+      } else {
+        feedbackBox.textContent = "🎉 Selamat! Anda telah menyelesaikan seluruh sesi latihan percakapan interaktif ini.";
+        feedbackBox.className = "feedback-box show success";
+      }
+    });
+
+    document.getElementById("stepDot1").addEventListener("click", () => resetToCheckpoint(0, true));
+    document.getElementById("stepDot2").addEventListener("click", () => resetToCheckpoint(1, true));
+    document.getElementById("resetLessonBtn").addEventListener("click", () => {
+      state.checkpointCompleted = {};
+      resetToCheckpoint(0, false);
+    });
+
+    videoSelector.addEventListener("change", (e) => {
+      videoEl.src = e.target.value;
+      videoEl.load();
+      state.checkpointCompleted = {};
+      resetToCheckpoint(0, true);
+    });
+
+    /* Modals */
+    const veoModal = document.getElementById("veoModal");
+    const helpModal = document.getElementById("helpModal");
+    document.getElementById("openVeoModalBtn").addEventListener("click", () => veoModal.classList.add("open"));
+    document.getElementById("closeVeoModalBtn").addEventListener("click", () => veoModal.classList.remove("open"));
+    document.getElementById("helpBtn").addEventListener("click", () => helpModal.classList.add("open"));
+    document.getElementById("closeHelpModalBtn").addEventListener("click", () => helpModal.classList.remove("open"));
+
+    document.getElementById("runVeoGenerateBtn").addEventListener("click", async () => {
+      const btn = document.getElementById("runVeoGenerateBtn");
+      const statusMsg = document.getElementById("veoStatusMsg");
+      const prompt = document.getElementById("veoPromptInput").value.trim();
+      if (!prompt) return;
+
+      btn.disabled = true;
+      statusMsg.textContent = "Generating video with veo-3.1-lite-generate-001 (~50s)...";
+      try {
+        const res = await fetch("/api/generate-video", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt, number_of_videos: 1, duration_seconds: 8 }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          statusMsg.textContent = "✅ Video berhasil di-generate!";
+          await loadLesson();
+          setTimeout(() => veoModal.classList.remove("open"), 1000);
+        } else {
+          statusMsg.textContent = `❌ Error: ${data.detail || "Failed"}`;
+        }
+      } catch (err) {
+        statusMsg.textContent = `❌ Error: ${err.message}`;
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    loadLesson();
+  </script>
+</body>
+</html>
